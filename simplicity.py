@@ -43,30 +43,61 @@ def load_vao(vc,prog):
     #vbo.release()
     return vbo,vao
 
-def transform_2D(p):
-    x = p[0]//p[2]
-    y = p[1]//p[2]
-    return [x,y,0.9]
 
+def transform_2D(p,angle,camera):
+    cos = math.cos(angle)
+    sin = math.sin(angle)
+    x = p[0]*cos + p[2]*sin
+    z = -p[0]*sin + p[2]*cos
+    z = z + camera
+    x = x/z
+    y = p[1]/z
+    #camera = 0.0
+    return [x,y,1.0]
+
+angle = 0
+camera = 3.0
 def update_vertices(vc):
+    global angle,camera
+    angle+=0.01
+    camera += 0.001 
     vertices = []
     for i in range(len(vc)):
-        vc[i][2] -= 0.01 
-        vertices.extend(transform_2D(vc[i]))
+        vertices.extend(transform_2D(vc[i],angle,camera))
         vertices.extend(vc[i][3:])
-    print(vertices)
+    #print(vertices)
     return vertices,vc
 
+
+def give_all_tri(arr):
+    res = []
+    for i in range(len(arr)):
+        for j in range(i+1,len(arr)):
+            for k in range(j+1,len(arr)):
+                res.extend([arr[i],arr[j],arr[k]])
+    return res
+
+def attach_tetrahedron(arr):
+    res = []
+    for a in arr:
+        res.extend(give_all_tri(a))
+    return res
+
 vc = [
-    [ 0.5, 0.5, 1.0,  1.0,0.0,0.0,  10.0],
-    [-0.5, 0.5, 1.0,  0.5,0.5,0.0,  10.0],
-    [-0.5,-0.5, 1.0,  0.0,1.0,0.0,  10.0],
-    [ 0.5,-0.5, 1.0,  0.0,0.0,1.0,  10.0]
+    [ 0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
+    [-0.5, 0.5, 0.5,  0.5,0.5,0.0,  10.0],
+    [-0.5,-0.5, 0.5,  0.0,1.0,0.0,  10.0],
+    [ 0.5,-0.5, 0.5,  0.0,0.0,1.0,  10.0],
+    
+    [ 0.5, 0.5, -0.5,  1.0,0.0,0.0,  10.0],
+    [-0.5, 0.5, -0.5,  0.5,0.5,0.0,  10.0],
+    [-0.5,-0.5, -0.5,  0.0,1.0,0.0,  10.0],
+    [ 0.5,-0.5, -0.5,  0.0,0.0,1.0,  10.0],
     ]
 
+vc = attach_tetrahedron([vc])
 vertices = []
 vertices,vc = update_vertices(vc)
-print(vertices)
 vbo,vao = load_vao(vertices,prog)
 clock = pygame.time.Clock()
 running = True
@@ -85,7 +116,8 @@ while running:
     vao.release()
     vertices,vc = update_vertices(vc)
     vbo,vao = load_vao(vertices,prog)
-    vao.render(mode=moderngl.POINTS)
+    #vao.render(mode=moderngl.POINTS)
+    vao.render(mode=moderngl.LINES)
     #vao.release()
     pygame.display.flip()
     clock.tick(60)
