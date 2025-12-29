@@ -158,16 +158,18 @@ def render(rotations,view,proj,mvp_uniform,vao,move=[0,0,0],scale=[1,1,1]):
     vao.render(moderngl.TRIANGLES,vertices=3,first=0)
 
 
-obj_tri = []
-tri = [e,f,g]
-for i in range(1):
-    obj_tri.append(tri)
-obj = attach_tetrahedron(obj_tri)
-vertices = np.array(obj,dtype='f4')
+def load_vao():
+    obj_tri = []
+    tri = [e,f,g]
+    for i in range(1):
+        obj_tri.append(tri)
+    obj = attach_tetrahedron(obj_tri)
+    vertices = np.array(obj,dtype='f4')
+    vbo = ctx.buffer(vertices.tobytes())
+    vao = ctx.vertex_array(prog,[(vbo,'3f 3f','in_pos','in_color')])
+    return vbo,vao
 
-vbo = ctx.buffer(vertices.tobytes())
-vao = ctx.vertex_array(prog,[(vbo,'3f 3f','in_pos','in_color')])
-
+vbo, vao = load_vao()
 clock = pygame.time.Clock()
 running = True
 iden_mat = np.eye(4,dtype='f4')
