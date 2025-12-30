@@ -43,15 +43,51 @@ def load_vao(vc,prog):
     #vbo.release()
     return vbo,vao
 
+def rotation_y(angle):
+    return np.array([
+        [math.cos(angle) , 0, math.sin(angle), 0],
+        [0               , 1, 0,               0],
+        [-math.sin(angle), 0, math.cos(angle), 0],
+        [0               , 0, 0,               1],
+        ],dtype='f4')
+
+def rotation_x(angle):
+    return np.array([
+        [1 , 0, 0, 0                            ],
+        [0, math.cos(angle) ,  math.sin(angle),0],
+        [0,-math.sin(angle) , math.cos(angle), 0],
+        [0               , 0, 0,               1],
+        ],dtype='f4')
+
+
+def rotation_z(angle):
+    return np.array([
+        [math.cos(angle) , math.sin(angle),0, 0],
+        [-math.sin(angle), math.cos(angle),0, 0],
+        [0               , 0,              1, 0],
+        [0               , 0, 0,              1],
+        ],dtype='f4')
+
+def rotate(p,xangle,yangle,zangle):
+    xcos = math.cos(xangle)
+    xsin = math.sin(xangle)
+    ycos = math.cos(yangle)
+    ysin = math.sin(yangle)
+    zcos = math.cos(zangle)
+    zsin = math.sin(zangle)
+    x1 = p[0]*ycos + p[2]*ysin
+    z1 = -p[0]*ysin + p[2]*ycos
+    x2 = x1*zcos + p[1]*zsin
+    y1 = -x1*zsin + p[1]*zcos
+    y2 = y1*xcos + z1*xsin
+    z2 = -y1*xsin + z1*xcos
+    return x2,y2,z2
 
 def transform_2D(p,angle,camera):
-    cos = math.cos(angle)
-    sin = math.sin(angle)
-    x = p[0]*cos + p[2]*sin
-    z = -p[0]*sin + p[2]*cos
+    x,y,z = rotate(p,math.pi*0.3,angle,0)
     z = z + camera
     x = x/z
-    y = p[1]/z
+    y = y/z
     #camera = 0.0
     return [x,y,1.0]
 
@@ -85,17 +121,17 @@ def attach_tetrahedron(arr):
 
 vc = [
     [ 0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
-    [-0.5, 0.5, 0.5,  0.5,0.5,0.0,  10.0],
-    [-0.5,-0.5, 0.5,  0.0,1.0,0.0,  10.0],
-    [ 0.5,-0.5, 0.5,  0.0,0.0,1.0,  10.0],
+    [-0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
+    [-0.5,-0.5, 0.5,  1.0,0.0,0.0,  10.0],
+    [ 0.5,-0.5, 0.5,  1.0,0.0,0.0,  10.0],
     
     [ 0.5, 0.5, -0.5,  1.0,0.0,0.0,  10.0],
-    [-0.5, 0.5, -0.5,  0.5,0.5,0.0,  10.0],
-    [-0.5,-0.5, -0.5,  0.0,1.0,0.0,  10.0],
-    [ 0.5,-0.5, -0.5,  0.0,0.0,1.0,  10.0],
+    [-0.5, 0.5, -0.5,  1.0,0.0,0.0,  10.0],
+    [-0.5,-0.5, -0.5,  1.0,0.0,0.0,  10.0],
+    [ 0.5,-0.5, -0.5,  1.0,0.0,0.0,  10.0],
     ]
 
-vc = attach_tetrahedron([vc])
+#vc = attach_tetrahedron([vc])
 vertices = []
 vertices,vc = update_vertices(vc)
 vbo,vao = load_vao(vertices,prog)
@@ -116,8 +152,9 @@ while running:
     vao.release()
     vertices,vc = update_vertices(vc)
     vbo,vao = load_vao(vertices,prog)
-    #vao.render(mode=moderngl.POINTS)
+    vao.render(mode=moderngl.POINTS)
     vao.render(mode=moderngl.LINES)
+    #vao.render(mode=moderngl.TRIANGLES)
     #vao.release()
     pygame.display.flip()
     clock.tick(60)
