@@ -81,7 +81,7 @@ def rotate(p,xangle,yangle,zangle):
     y1 = -x1*zsin + p[1]*zcos
     y2 = y1*xcos + z1*xsin
     z2 = -y1*xsin + z1*xcos
-    return x2,y2,z2
+    return [x2,y2,z2]
 
 def transform_2D(p,angle,camera):
     x,y,z = rotate(p,math.pi*0.3,angle,0)
@@ -119,6 +119,22 @@ def attach_tetrahedron(arr):
         res.extend(give_all_tri(a))
     return res
 
+def draw_circle(p,r,segment,completion,recur,rotation):
+    color = [0.5,1.0,0.5]
+    size = [5.0]
+    res = []
+    #p[1]+=r
+    for i in range(0,segment):
+        angle = completion*2*math.pi*i/segment
+        new_p = rotate(p,rotation[0]*angle,rotation[1]*angle,rotation[2]*angle)
+        new_p.extend(color)
+        new_p.extend(size)
+        res.append(new_p)
+        #continue
+        if recur:
+            res.extend(draw_circle(new_p,r,segment,1.0,False,[0,1,0]))
+    return res
+
 vc = [
     [ 0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
     [-0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
@@ -132,8 +148,12 @@ vc = [
     ]
 
 #vc = attach_tetrahedron([vc])
-vertices = []
+vc = draw_circle([0.0,1.0,0],0.8,20,0.5,True,[0,0,1])
+vc.sort()
+print(vc)
+#vertices = []
 vertices,vc = update_vertices(vc)
+vertices = vc
 vbo,vao = load_vao(vertices,prog)
 clock = pygame.time.Clock()
 running = True
