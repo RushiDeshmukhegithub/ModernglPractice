@@ -84,7 +84,7 @@ def rotate(p,xangle,yangle,zangle):
     return [x2,y2,z2]
 
 def transform_2D(p,angle,camera):
-    x,y,z = rotate(p,math.pi*0.3,angle,0)
+    x,y,z = rotate(p,math.pi*0,angle,0)
     z = z + camera
     x = x/z
     y = y/z
@@ -135,6 +135,21 @@ def draw_circle(p,r,segment,completion,recur,rotation):
             res.extend(draw_circle(new_p,r,segment,1.0,False,[0,1,0]))
     return res
 
+def draw_cylinder(p,r,segment,completion,recur,rotation,dir):
+    color = [0.5,1.0,0.5]
+    size = [5.0]
+    res = []
+    for i in range(0,segment):
+        new_p = p.copy()
+        tmp = i/segment
+        new_p = [new_p[0]+dir[0]*tmp,new_p[1]+dir[1]*tmp,new_p[2]+dir[2]*tmp]
+        new_p.extend(color)
+        new_p.extend(size)
+        res.append(new_p)
+        if recur:
+            res.extend(draw_circle(new_p,r,segment,1.0,False,[1,0,0]))
+    return res
+
 vc = [
     [ 0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
     [-0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
@@ -148,9 +163,8 @@ vc = [
     ]
 
 #vc = attach_tetrahedron([vc])
-vc = draw_circle([0.0,1.0,0],0.8,20,0.5,True,[0,0,1])
-vc.sort()
-print(vc)
+#vc = draw_circle([0.0,1.0,0],0.8,50,0.5,True,[0,0,1])
+vc = draw_cylinder([0.0,1.0,0],0.8,50,0.5,True,[0,0,1],[1,0,0])
 #vertices = []
 vertices,vc = update_vertices(vc)
 vertices = vc
@@ -174,7 +188,7 @@ while running:
     vbo,vao = load_vao(vertices,prog)
     vao.render(mode=moderngl.POINTS)
     vao.render(mode=moderngl.LINES)
-    #vao.render(mode=moderngl.TRIANGLES)
+    vao.render(mode=moderngl.TRIANGLES)
     #vao.release()
     pygame.display.flip()
     clock.tick(60)
