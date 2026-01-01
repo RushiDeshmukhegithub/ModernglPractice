@@ -5,7 +5,7 @@ import math
 
 pygame.init()
 width = 800
-height = 600
+height = 800
 pygame.display.set_mode((width,height),pygame.DOUBLEBUF | pygame.OPENGL | pygame.RESIZABLE)
 pygame.display.set_caption("Simplicity")
 
@@ -84,7 +84,7 @@ def rotate(p,xangle,yangle,zangle):
     return [x2,y2,z2]
 
 def transform_2D(p,angle,camera):
-    x,y,z = rotate(p,math.pi*0,angle,0)
+    x,y,z = rotate(p,math.pi*0.4,angle,0)
     z = z + camera
     x = x/z
     y = y/z
@@ -92,7 +92,7 @@ def transform_2D(p,angle,camera):
     return [x,y,1.0]
 
 angle = 0
-camera = 3.0
+camera = 5.0
 def update_vertices(vc):
     global angle,camera
     angle+=0.01
@@ -150,6 +150,26 @@ def draw_cylinder(p,r,segment,completion,recur,rotation,dir):
             res.extend(draw_circle(new_p,r,segment,1.0,False,[1,0,0]))
     return res
 
+def circle(center,radius,color,size,segment,rotation):
+    p = [0,radius,1.0]
+    completion = 1.0
+    res = []
+    for i in range(0, segment):
+        angle = completion*2*math.pi*i/segment
+        new_p = rotate(p,rotation[0]*angle,rotation[1]*angle,rotation[2]*angle)
+        new_p = [new_p[0] + center[0],new_p[1]+center[1],new_p[2]+center[2]]
+        new_p.extend(color)
+        new_p.extend(size)
+        res.append(new_p)
+    return res
+
+def donut(center,radius,color,size,segment,rotation):
+    res = []
+    vc = circle(center,radius,color,size,segment,rotation)
+    for i in range(len(vc)):
+        res.extend(circle(vc[i],radius-1,color,size,segment,[0,1,0]))
+    return res
+
 vc = [
     [ 0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
     [-0.5, 0.5, 0.5,  1.0,0.0,0.0,  10.0],
@@ -164,7 +184,10 @@ vc = [
 
 #vc = attach_tetrahedron([vc])
 #vc = draw_circle([0.0,1.0,0],0.8,50,0.5,True,[0,0,1])
-vc = draw_cylinder([0.0,1.0,0],0.8,50,0.5,True,[0,0,1],[1,0,0])
+#vc = draw_cylinder([0.0,1.0,0],0.8,50,0.5,True,[0,0,1],[1,0,0])
+vc = circle([0.0,0.0,1.0],0.8,[0,0,1],[10.0],30,[0,0,1])
+vc = donut([0.0,0.0,3.0],0.8,[0,0,1],[5.0],30,[0,0,1])
+print(vc)
 #vertices = []
 vertices,vc = update_vertices(vc)
 vertices = vc
@@ -188,7 +211,7 @@ while running:
     vbo,vao = load_vao(vertices,prog)
     vao.render(mode=moderngl.POINTS)
     vao.render(mode=moderngl.LINES)
-    vao.render(mode=moderngl.TRIANGLES)
+    #vao.render(mode=moderngl.TRIANGLES)
     #vao.release()
     pygame.display.flip()
     clock.tick(60)
