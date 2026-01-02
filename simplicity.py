@@ -83,8 +83,17 @@ def rotate(p,xangle,yangle,zangle):
     z2 = -y1*xsin + z1*xcos
     return [x2,y2,z2]
 
+def scale(p,sc):
+    return[p[0]*sc[0],p[1]*sc[1],p[2]*sc[2]]
+
+sc = [1,1,1]
 def transform_2D(p,angle,camera):
-    x,y,z = rotate(p,math.pi*0.4,angle,0)
+    global sc
+    x,y,z = rotate(p,math.pi*0,math.pi*0.2,math.pi*0)
+    x,y,z = scale([x,y,z],sc)
+    #sc[0] += 0.0001
+    #sc[1] += 0.00002
+    sc[2] += 0.001
     z = z + camera
     x = x/z
     y = y/z
@@ -95,8 +104,8 @@ angle = 0
 camera = 5.0
 def update_vertices(vc):
     global angle,camera
-    angle+=0.01
-    camera += 0.001 
+    #angle+=0.01
+    #camera += 0.001 
     vertices = []
     for i in range(len(vc)):
         vertices.extend(transform_2D(vc[i],angle,camera))
@@ -183,11 +192,10 @@ vc = [
     ]
 
 #vc = attach_tetrahedron([vc])
-#vc = draw_circle([0.0,1.0,0],0.8,50,0.5,True,[0,0,1])
+#vc = draw_circle([0.0,1.0,0],0.8,30,0.5,True,[0,0,1])
 #vc = draw_cylinder([0.0,1.0,0],0.8,50,0.5,True,[0,0,1],[1,0,0])
-vc = circle([0.0,0.0,1.0],0.8,[0,0,1],[10.0],30,[0,0,1])
-vc = donut([0.0,0.0,3.0],0.8,[0,0,1],[5.0],30,[0,0,1])
-print(vc)
+#vc = circle([0.0,0.0,1.0],0.8,[0,0,1],[10.0],30,[0,0,1])
+#vc = donut([0.0,0.0,3.0],0.8,[0,0,1],[5.0],30,[0,0,1])
 #vertices = []
 vertices,vc = update_vertices(vc)
 vertices = vc
@@ -210,7 +218,7 @@ while running:
     vertices,vc = update_vertices(vc)
     vbo,vao = load_vao(vertices,prog)
     vao.render(mode=moderngl.POINTS)
-    vao.render(mode=moderngl.LINES)
+    #vao.render(mode=moderngl.LINES)
     #vao.render(mode=moderngl.TRIANGLES)
     #vao.release()
     pygame.display.flip()
