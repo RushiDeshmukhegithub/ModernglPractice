@@ -1,0 +1,16 @@
+Plan : 
+
+Shapes : 
+1) Cube ( modifiable endpoints)
+2) Sphere 
+3) Cone
+
+
+editor: 
+1) Can input shapes in space
+2) Movable camera
+3) Edit shapes
+   i) Rotation
+   ii) Scaling
+   iii) Modifing endpoints
+4) Saving in file , getting saved shapes from the file
