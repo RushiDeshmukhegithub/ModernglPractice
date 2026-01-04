@@ -38,16 +38,16 @@ def load_vertices():
         vertices = new_vertices
 
 def load_camera():
-    global vertices,universe,camera
+    global vertices,universe,camera,program
     vertices = vertices.reshape(-1,7)
     vertices[:,:1]-=camera[0]
     vertices[:,1:2]-=camera[1]
     vertices[:,2:3]-=camera[2]
-    #vertices[:,:1]/=vertices[:,2:3]
-    #vertices[:,1:2]/=vertices[:,2:3]
-    #vertices[:,2:3]=1.0
-    print("vertices",vertices)
+    vertices[:,:1]/=vertices[:,2:3]
+    vertices[:,1:2]/=vertices[:,2:3]
+    vertices[:,2:3]=1.0
     vertices = vertices.flatten()
+    program["camera_pos"].value = np.array(camera,dtype='f4')
 
 def load_vbo_vao():
     global vertices,program,vbo,vao
