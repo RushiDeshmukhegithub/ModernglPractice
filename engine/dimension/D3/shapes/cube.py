@@ -1,4 +1,5 @@
 import numpy as np
+from pysdf import SDF
 
 class Cube:
     def __init__(self):
@@ -31,6 +32,8 @@ class Cube:
 
         self.color = [0.0,1.0,0.0]
         self.pointSize = 10.0
+        self.sdf_function = SDF(np.array([self.vertices_list[i:i+3] for i in range(0,len(self.vertices_list),3)],dtype='f4'),
+                                np.array(self.triangles,dtype='f4'))
 
     def get_shape(self,vertices,triangles):
         res = []
@@ -45,8 +48,14 @@ class Cube:
         extra = self.color.copy()
         extra.extend([self.pointSize])
         arr = np.array(shape,dtype='f4').reshape(-1,3)
-        arr = np.hstack((arr , np.tile(extra,(len(arr),1)))).flatten()
-        return arr.astype('f4')
+        #vertices = [[shape[i]+0.001,shape[i+1]+0.001,shape[i+2]+0.001] for i in range(0,len(shape),3)]
+        #distances = self.sdf_function(np.array(vertices,dtype='f4'))
+        #distances = distances.reshape(-1,1)
+        #print("dis : ",distances)
+        arr = np.hstack((arr , np.tile(extra,(len(arr),1))))
+        #arr = np.hstack((arr , distances))
+        print("arr",arr)
+        return arr.flatten().astype('f4')
 
     def set_vertices(self,vertices):
         self.vertices_list = vertices
