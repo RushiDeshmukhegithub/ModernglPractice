@@ -4,6 +4,7 @@ Shapes :
 1) Cube ( modifiable endpoints)
 2) Sphere 
 3) Cone
+4) Morbius Strip
 
 
 editor: 
