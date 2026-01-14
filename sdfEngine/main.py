@@ -29,6 +29,9 @@ fragment_shader = """
 uniform vec2 u_resolution;
 uniform vec3 camera_pos;
 uniform vec3 light_source;
+vec3 colour
+//;
+=vec3(0.1,0.1,0.1);
 
 out vec4 f_color;
 
@@ -40,8 +43,21 @@ float sdSphere(vec3 p, float radius, vec3 center,vec3 camera_pos){
         return length(p-center-camera_pos) - radius;
 }
 
+float fBox(vec3 p,vec3 b,vec3 center){
+        vec3 z = abs(p) - abs(b);
+        return max(max(z[0],z[1]),z[2]);
+}
+
+
 float map(vec3 p){
-        return sdSphere(p,1.0,vec3(0.0,0.0,5.0),vec3(0.0,0.0,0.0));
+        float d1 = sdSphere(p,1.0,vec3(0.0,1.0,0.0),vec3(0.0,0.0,0.0));
+        float d2 = fBox(p,vec3(20.0,0.01,20.0),vec3(0));
+        if(d1 < d2){
+            colour = vec3(0.9,0.9,0.0);
+            return d1;
+        }
+        colour = vec3(0.0,0.5,0.5);
+        return d2;
 }
 
 vec3 getNormal(vec3 p){
@@ -67,7 +83,9 @@ void main(){
         vec3 p = ro;
         for(int i=0;i<256;i++){
             vec3 p = ro + rd*t;
-            float d = sdSphere(p,1.0,center,vec3(0.0,0.0,0.0));
+            //float d = sdSphere(p,1.0,center,vec3(0.0,0.0,0.0));
+            //float d = fBox(p,vec3(0.1,0.3,0.8),vec3(0.0,0.0,0.0));
+            float d = map(p);
             t+=d;
             if(abs(d)<0.001){
                 break;
@@ -82,9 +100,13 @@ void main(){
         =vec3(0.1,0.1,0.1);
         if(t < 500.0){
             p = ro+rd*t;
-            vec3 diffusion = vec3(1)*clamp(dot(getNormal(p),normalize(light_source-p)),0.0,1.0);
+            vec3 diffusion = colour*clamp(dot(getNormal(p),normalize(light_source-p)),0.0,1.0);
             col += diffusion;
         }
+        else{
+            col = vec3(0);
+        }
+        //col = pow(col,vec3(0.4545));
         f_color = vec4(col,1.0);
 }
 
@@ -134,17 +156,17 @@ while running:
             if event.key == pygame.K_DOWN:
                 camera_pos[1] -= 0.1
             if event.key == pygame.K_u:
-                light_source[2] += 0.1
+                light_source[2] += 10.0
             if event.key == pygame.K_j:
-                light_source[2] -= 0.1
+                light_source[2] -= 10.0
             if event.key == pygame.K_h:
-                light_source[0] -= 0.1
+                light_source[0] -= 10.0
             if event.key == pygame.K_k:
-                light_source[0] += 0.1
+                light_source[0] += 10.0
             if event.key == pygame.K_t:
-                light_source[1] += 0.1
+                light_source[1] += 10.0
             if event.key == pygame.K_g:
-                light_source[1] -= 0.1
+                light_source[1] -= 10.0
 
     ctx.clear(0.0,0.0,0.0)
     program['camera_pos'].value = camera_pos
