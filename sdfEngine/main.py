@@ -29,6 +29,7 @@ fragment_shader = """
 uniform vec2 u_resolution;
 uniform vec3 camera_pos;
 uniform vec3 light_source;
+uniform vec3 object
 vec3 colour
 //;
 =vec3(0.1,0.1,0.1);
@@ -105,6 +106,12 @@ void main(){
         }
         else{
             col = vec3(0);
+        }
+        if(abs(uv.x)<0.005){
+            col = vec3(0.0,0.0,1.0);
+        }
+        if(abs(uv.y)<0.005){
+            col = vec3(1.0,0.0,0.0);
         }
         //col = pow(col,vec3(0.4545));
         f_color = vec4(col,1.0);
