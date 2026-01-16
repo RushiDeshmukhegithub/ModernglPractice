@@ -1,6 +1,8 @@
 import pygame
 import moderngl
 import numpy as np
+import math
+
 
 pygame.init()
 WIDTH , HEIGHT = 800,600
@@ -29,7 +31,7 @@ fragment_shader = """
 uniform vec2 u_resolution;
 uniform vec3 camera_pos;
 uniform vec3 light_source;
-uniform vec3 object
+uniform vec3 angles;
 vec3 colour
 //;
 =vec3(0.1,0.1,0.1);
@@ -70,6 +72,26 @@ vec3 getNormal(vec3 p){
             ));
 }
 
+mat3 rotate_x(float angle){
+        float c = cos(angle);
+        float s = sin(angle);
+        return mat3(
+            1,0,0,
+            0,c,s,
+            0,-s,c
+            );
+}
+
+mat3 rotate_y(float angle){
+        float c = cos(angle);
+        float s = sin(angle);
+        return mat3(
+            c,0,s,
+            0,1,0,
+            -s,0,c
+            );
+}
+
 void main(){
         vec2 uv = gl_FragCoord.xy / u_resolution;
         uv = uv*2.0 - 1.0;
@@ -78,7 +100,8 @@ void main(){
         vec3 ro = camera_pos;
         vec3 normal = normalize(vec3(uv,-1.0));
         vec3 rd = vec3(uv,1.0);
-        //ro *= angle;
+        rd = rd*rotate_x(angles.x);
+        rd = rd*rotate_y(angles.y);
         //rd *= angle;
         float t = 0.0;
         vec3 p = ro;
@@ -126,7 +149,7 @@ light_source = [20.0,40.0,-30.0];
 program['light_source'].value = light_source
 u_resolution = program['u_resolution']
 u_resolution.value = (WIDTH,HEIGHT)
-
+rotation_angles = [0.0,0.0,0.0]
 vertices = np.array([
     -1.0, 1.0,1.0,
      1.0, 1.0,1.0,
@@ -175,9 +198,19 @@ while running:
             if event.key == pygame.K_g:
                 light_source[1] -= 10.0
 
-    ctx.clear(0.0,0.0,0.0)
     program['camera_pos'].value = camera_pos
     program['light_source'].value = light_source
+    m_x,m_y = pygame.mouse.get_pos()
+    mouse_pos = [m_x,m_y]
+    print(mouse_pos)
+    mouse_pos[1] = -((mouse_pos[1]*2)/600 -1)
+    mouse_pos[0] = (mouse_pos[0]*2)/800 - 1
+    print(mouse_pos)
+    rotation_angles[1]=mouse_pos[0]*math.pi
+    rotation_angles[0]=mouse_pos[1]*math.pi
+    print(rotation_angles)
+    program['angles'].value = rotation_angles
+    ctx.clear(0.0,0.0,0.0)
     vao.render()
     pygame.display.flip()
 
