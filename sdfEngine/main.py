@@ -32,6 +32,8 @@ uniform vec2 u_resolution;
 uniform vec3 camera_pos;
 uniform vec3 light_source;
 uniform vec3 angles;
+uniform float r;
+uniform vec3 cc;
 vec3 colour
 //;
 =vec3(0.1,0.1,0.1);
@@ -43,7 +45,9 @@ float sdCircle(vec2 uv,float r,vec3 center){
 }
 
 float sdSphere(vec3 p, float radius, vec3 center,vec3 camera_pos){
-        return length(p-center-camera_pos) - radius;
+        float x = min(abs(p.x),2);
+        x = 0.0;
+        return length(p-vec3(x,0.0,0.0)-center-camera_pos) - radius;
 }
 
 float fBox(vec3 p,vec3 b,vec3 center){
@@ -51,16 +55,33 @@ float fBox(vec3 p,vec3 b,vec3 center){
         return max(max(z[0],z[1]),z[2]);
 }
 
+float oc(vec3 p){
+        float x = min(abs(p.x),3.0);
+        float d1 = length(p-vec3(x,0.0,0.0)) - 0.1;
+        float y = min(abs(p.y),3.0);
+        float d2 = length(p-vec3(0.0,y,0.0)) - 0.1;
+        float z = min(abs(p.z),3.0);
+        float d3 = length(p-vec3(0.0,0.0,z)) - 0.1;
+        return min(min(d1,d2),d3);
+}
+
 
 float map(vec3 p){
-        float d1 = sdSphere(p,1.0,vec3(0.0,1.0,0.0),vec3(0.0,0.0,0.0));
-        float d2 = fBox(p,vec3(20.0,0.01,20.0),vec3(0));
-        if(d1 < d2){
+        float d1 = sdSphere(p,r,cc,vec3(0.0,0.0,0.0));
+        float d2 = fBox(p,vec3(1.0,1.0,1.0),vec3(0));
+        float d3 = oc(p);
+        if(d1 < min(d2,d3)){
             colour = vec3(0.9,0.9,0.0);
             return d1;
         }
-        colour = vec3(0.0,0.5,0.5);
-        return d2;
+        else if( d2 < min(d1,d3)){
+            colour = vec3(0.0,0.5,0.5);
+            return d2;
+        }
+        else{
+            colour = vec3(1.0,0.0,0.0);
+            return d3;
+        }
 }
 
 vec3 getNormal(vec3 p){
@@ -102,16 +123,16 @@ void main(){
         vec3 rd = vec3(uv,1.0);
         rd = rd*rotate_x(angles.x);
         rd = rd*rotate_y(angles.y);
-        //rd *= angle;
+        ro = ro*rotate_x(angles.x);
+        ro = ro*rotate_y(angles.y);
         float t = 0.0;
         vec3 p = ro;
+        float d = 0.0;
         for(int i=0;i<256;i++){
             vec3 p = ro + rd*t;
-            //float d = sdSphere(p,1.0,center,vec3(0.0,0.0,0.0));
-            //float d = fBox(p,vec3(0.1,0.3,0.8),vec3(0.0,0.0,0.0));
-            float d = map(p);
+            d = map(p);
             t+=d;
-            if(abs(d)<0.001){
+            if(d<0.001){
                 break;
             }
             if(t>500.0){
@@ -128,7 +149,7 @@ void main(){
             col += diffusion;
         }
         else{
-            col = vec3(0);
+            col = vec3(0.9);
         }
         if(abs(uv.x)<0.005){
             col = vec3(0.0,0.0,1.0);
@@ -143,13 +164,27 @@ void main(){
 """
 
 program = ctx.program(vertex_shader,fragment_shader)
-camera_pos = [0.0,0.0,0.0]
-program['camera_pos'].value = camera_pos
-light_source = [20.0,40.0,-30.0];
-program['light_source'].value = light_source
-u_resolution = program['u_resolution']
-u_resolution.value = (WIDTH,HEIGHT)
-rotation_angles = [0.0,0.0,0.0]
+
+def setProgramVariables():
+    global program,r,cc,camera_pos,light_source,u_resolution,angles
+    program['r'] = r
+    program['cc'] = cc
+    program['camera_pos'] = camera_pos
+    program['light_source'] = light_source
+    program['u_resolution'] = u_resolution
+    program['angles'] = angles
+
+
+r = 1.0
+cc = [0.0,1.0,0.0]
+program['r'] = r
+program['cc'] = cc
+camera_pos = [0.0,0.0,-5.0]
+#program['camera_pos'].value = camera_pos
+light_source = [0.0,50.0,-10.0];
+#program['light_source'].value = light_source
+u_resolution = (WIDTH,HEIGHT)
+angles = [0.0,0.0,0.0]
 vertices = np.array([
     -1.0, 1.0,1.0,
      1.0, 1.0,1.0,
@@ -165,11 +200,28 @@ vao = ctx.vertex_array(program,[(vbo,'3f','in_pos')])
 
 clock = pygame.time.Clock()
 running = True
-
+dragging = False
+drag_start_pos = [0.0,0.0]
+drag_end_pos = [0.0,0.0]
+dr = r
 while running:
+    m_x,m_y = pygame.mouse.get_pos()
+    mouse_pos = [m_x,m_y]
+    mouse_pos[1] = -((mouse_pos[1]*2)/600 -1)
+    mouse_pos[0] = (mouse_pos[0]*2)/800 - 1
+    print(mouse_pos)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.MOUSEBUTTONUP:
+            dragging = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if not dragging:
+                drag_start_pos = mouse_pos.copy()
+            dragging = True
+        if event.type == pygame.MOUSEMOTION:
+            if dragging:
+                pass
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
@@ -197,19 +249,13 @@ while running:
                 light_source[1] += 10.0
             if event.key == pygame.K_g:
                 light_source[1] -= 10.0
-
-    program['camera_pos'].value = camera_pos
-    program['light_source'].value = light_source
-    m_x,m_y = pygame.mouse.get_pos()
-    mouse_pos = [m_x,m_y]
-    print(mouse_pos)
-    mouse_pos[1] = -((mouse_pos[1]*2)/600 -1)
-    mouse_pos[0] = (mouse_pos[0]*2)/800 - 1
-    print(mouse_pos)
-    rotation_angles[1]=mouse_pos[0]*math.pi
-    rotation_angles[0]=mouse_pos[1]*math.pi
-    print(rotation_angles)
-    program['angles'].value = rotation_angles
+    if dragging:
+        r = dr+(mouse_pos[0]-drag_start_pos[0])
+    else:
+        dr = r
+        angles[1]=mouse_pos[0]*math.pi
+        angles[0]=mouse_pos[1]*math.pi
+    setProgramVariables()
     ctx.clear(0.0,0.0,0.0)
     vao.render()
     pygame.display.flip()
