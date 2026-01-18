@@ -5,7 +5,7 @@ import math
 
 
 pygame.init()
-WIDTH , HEIGHT = 800,600
+WIDTH , HEIGHT = 1000,800
 dim = (WIDTH, HEIGHT)
 pygame.display.set_mode(dim,pygame.DOUBLEBUF | pygame.OPENGL )
 pygame.display.set_caption("SDF Engine")
@@ -34,62 +34,137 @@ uniform vec3 light_source;
 uniform vec3 angles;
 uniform float r;
 uniform vec3 cc;
+uniform bool setHashb;
 vec3 colour
 //;
 =vec3(0.1,0.1,0.1);
 
 out vec4 f_color;
 
-float sdCircle(vec2 uv,float r,vec3 center){
-        return length(uv-center.xy)-r;
+//Global Variables
+vec3 ro = camera_pos;
+vec3 rd = vec3(0.0,0.0,0.0);
+
+
+vec2 min2(vec2 a, vec2 b){
+        if(a.x < b.x){
+            return a;
+        }
+        return b;
 }
 
-float sdSphere(vec3 p, float radius, vec3 center,vec3 camera_pos){
+vec2 max2(vec2 a, vec2 b){
+        if(a.x > b.x){
+            return a;
+        }
+        return b;
+}
+
+vec2 returnMin(vec2 dis[100],int size){
+        vec2 mindis = dis[0];
+        for(int i=1;i<size;i++){
+            mindis = min2(mindis,dis[i]);
+        }
+        return mindis;
+}
+
+vec2 oc(vec3 p,vec3 center){
+        p = p - center;
+        float d1 = length(p-vec3(min(abs(p.x),3.0),0.0,0.0)) - 0.05;
+        float d2 = length(p-vec3(0.0,min(abs(p.y),3.0),0.0)) - 0.05;
+        float d3 = length(p-vec3(0.0,0.0,min(abs(p.z),3.0))) - 0.05;
+        vec2 arr[100];
+        arr[0] = vec2(d1,2.0);
+        arr[1] = vec2(d2,1.0);
+        arr[2] = vec2(d3,3.0);
+        return returnMin(arr,3);
+}
+
+vec2 sdfBeam(vec3 p,float d,vec2 mindist){
+        vec3 p2 = camera_pos + rd*d;
+        //float res = (length(p-ro) + length(p-p2))/(2*d)-0.8;
+        float res = length(p-vec3(p2.x,p2.y,min(p.z,d))) - 2.0;
+        //return max2(mindist,vec2(-res,mindist.y));
+        return min2(mindist,vec2(res,8.0));
+}
+
+vec2 sdfPlane(vec3 p, float z){
+        float d = p.z-z;
+        float id = 6.0;
+        if(mod(int(p.x),2)== mod(int(p.y),2)){
+            id=7.0;
+        }
+        return vec2(d,id);
+}
+
+vec2 sdSphere(vec3 p, float radius, vec3 center,vec3 camera_pos){
         float x = min(abs(p.x),2);
         x = 0.0;
-        return length(p-vec3(x,0.0,0.0)-center-camera_pos) - radius;
+        vec2 d1 = vec2(length(p-vec3(x,0.0,0.0)-center-camera_pos) - radius,4.0);
+        vec2 d2 = oc(p,center);
+        return min2(d1,d2);
+        //return d1;
 }
 
-float fBox(vec3 p,vec3 b,vec3 center){
-        vec3 z = abs(p) - abs(b);
-        return max(max(z[0],z[1]),z[2]);
-}
-
-float oc(vec3 p){
-        float x = min(abs(p.x),3.0);
-        float d1 = length(p-vec3(x,0.0,0.0)) - 0.1;
-        float y = min(abs(p.y),3.0);
-        float d2 = length(p-vec3(0.0,y,0.0)) - 0.1;
-        float z = min(abs(p.z),3.0);
-        float d3 = length(p-vec3(0.0,0.0,z)) - 0.1;
-        return min(min(d1,d2),d3);
+vec2 fBox(vec3 p,vec3 b,vec3 center){
+        vec3 z = abs(p-center) - abs(b);
+        vec2 d1 = vec2(max(max(z[0],z[1]),z[2]),5.0);
+        vec2 d2 = oc(p,center);
+        return min2(d1,d2);
 }
 
 
-float map(vec3 p){
-        float d1 = sdSphere(p,r,cc,vec3(0.0,0.0,0.0));
-        float d2 = fBox(p,vec3(1.0,1.0,1.0),vec3(0));
-        float d3 = oc(p);
-        if(d1 < min(d2,d3)){
-            colour = vec3(0.9,0.9,0.0);
-            return d1;
-        }
-        else if( d2 < min(d1,d3)){
-            colour = vec3(0.0,0.5,0.5);
-            return d2;
-        }
-        else{
-            colour = vec3(1.0,0.0,0.0);
-            return d3;
-        }
+vec2 map(vec3 p){
+        vec2 d1 = sdSphere(p,r,cc,vec3(0.0,0.0,0.0));
+        vec2 d2 = fBox(p,vec3(1.0,2.0,0.5),vec3(0.0));
+        vec2 d3 = sdfPlane(p,0.0);
+        vec2 arr[100];
+        int n = 3;
+        //vec2 d = max(-d1,d2);
+        arr[0] = d1;
+        arr[1] = d2;
+        arr[2] = d3;
+        //for(int i=0;i<n;i++){
+          //  arr[i] = sdSphere(p,1.0+r*(i)*0.1,cc*vec3((100-i)*0.1,i*0.5-0.2,1.0+i*0.9),vec3(0.0));
+        //}
+        vec2 d = returnMin(arr,n);
+        d = sdfBeam(p,30.0,d);
+        return d;
+}
+
+vec3 getMaterial(vec2 object){
+    if(object.y == 1.0){
+        return vec3(1.0,0.1,0.1);
+    }
+    if(object.y == 2.0){
+        return vec3(0.0,1.0,0.0);
+    }
+    if(object.y == 3.0){
+        return vec3(0.0,0.0,1.0);
+    }
+    if(object.y == 4.0){
+        return vec3(0.9,0.9,0.0);
+    }
+    if(object.y == 5.0){
+        return vec3(0.0,0.5,0.5);
+    }            
+    if(object.y == 6.0){
+        return vec3(1.0);
+    }            
+    if(object.y == 7.0){
+        return vec3(0.0);
+    }            
+    if(object.y == 8.0){
+        return vec3(1.0,0.0,0.0);
+    }            
 }
 
 vec3 getNormal(vec3 p){
         vec2 e = vec2(0.1,0.0);
         return normalize(vec3(
-            map(p+e.xyy) - map(p-e.xyy),
-            map(p+e.yxy) - map(p-e.yxy),
-            map(p+e.yyx) - map(p-e.yyx)
+            map(p+e.xyy).x - map(p-e.xyy).x,
+            map(p+e.yxy).x - map(p-e.yxy).x,
+            map(p+e.yyx).x - map(p-e.yyx).x
             ));
 }
 
@@ -118,38 +193,51 @@ void main(){
         uv = uv*2.0 - 1.0;
         uv.x *= u_resolution.x/u_resolution.y; 
         vec3 center = vec3(0.0,0.0,5.0);
-        vec3 ro = camera_pos;
         vec3 normal = normalize(vec3(uv,-1.0));
-        vec3 rd = vec3(uv,1.0);
+        rd = vec3(uv,1.0);
         rd = rd*rotate_x(angles.x);
         rd = rd*rotate_y(angles.y);
         ro = ro*rotate_x(angles.x);
         ro = ro*rotate_y(angles.y);
-        float t = 0.0;
+        vec2 object;
+        object.x = 0.0;
+        object.y = 0;
         vec3 p = ro;
         float d = 0.0;
-        for(int i=0;i<256;i++){
-            vec3 p = ro + rd*t;
-            d = map(p);
-            t+=d;
-            if(d<0.001){
+        vec2 hit;
+        for(int i=0;i<64;i++){
+            vec3 p = ro + rd*object.x;
+            hit = map(p);
+            object.x += hit.x;
+            object.y = hit.y;
+            if(hit.x<0.001){
                 break;
             }
-            if(t>500.0){
+            if(object.x>100.0){
                 break;
             }
         }
-        vec3 light_ray = light_source - p;
         vec3 col
         //;
         =vec3(0.1,0.1,0.1);
-        if(t < 500.0){
-            p = ro+rd*t;
-            vec3 diffusion = colour*clamp(dot(getNormal(p),normalize(light_source-p)),0.0,1.0);
-            col += diffusion;
+        if(object.x < 100.0){
+            p = ro+rd*object.x;
+            colour = getMaterial(object);
+            vec3 l = normalize(light_source - p);
+            vec3 n = getNormal(p);
+            vec3 v = normalize(ro-p);
+            vec3 h = normalize(l+v);
+            //vec3 diffusion = colour*clamp(dot(n,l),0.0,1.0);
+            //col += diffusion;
+            float diff = max(0.0,dot(n,l));
+            float sss = pow(max(0.0,dot(rd,-l)),4.0)*5.0;
+            float spec = pow(max(0.0,dot(n,h)),64.0);
+            col = colour * (diff*0.6+0.4);
+            //col += vec3(0.8,1.0,0.9)*sss;
+            col += vec3(1.0)*spec;
         }
         else{
-            col = vec3(0.9);
+            col = vec3(0.8);
         }
         if(abs(uv.x)<0.005){
             col = vec3(0.0,0.0,1.0);
@@ -157,7 +245,6 @@ void main(){
         if(abs(uv.y)<0.005){
             col = vec3(1.0,0.0,0.0);
         }
-        //col = pow(col,vec3(0.4545));
         f_color = vec4(col,1.0);
 }
 
@@ -176,10 +263,10 @@ def setProgramVariables():
 
 
 r = 1.0
-cc = [0.0,1.0,0.0]
+cc = [1.0,0.0,0.0]
 program['r'] = r
 program['cc'] = cc
-camera_pos = [0.0,0.0,-5.0]
+camera_pos = [0.0,0.0,-10.0]
 #program['camera_pos'].value = camera_pos
 light_source = [0.0,50.0,-10.0];
 #program['light_source'].value = light_source
@@ -204,6 +291,7 @@ dragging = False
 drag_start_pos = [0.0,0.0]
 drag_end_pos = [0.0,0.0]
 dr = r
+toggle = False
 while running:
     m_x,m_y = pygame.mouse.get_pos()
     mouse_pos = [m_x,m_y]
@@ -255,6 +343,14 @@ while running:
         dr = r
         angles[1]=mouse_pos[0]*math.pi
         angles[0]=mouse_pos[1]*math.pi
+    if(toggle and cc[0] < 2.0):
+        cc[0] += 0.01
+    else:
+        toggle = False
+    if(cc[0] > -2.0 and not toggle):
+        cc[0]-=0.01
+    else:
+        toggle = True 
     setProgramVariables()
     ctx.clear(0.0,0.0,0.0)
     vao.render()
