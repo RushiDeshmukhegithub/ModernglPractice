@@ -48,6 +48,9 @@ vec3 getMaterial(float id){
     if(id == 3.0){
         return vec3(0.0);
     }
+    if(id == 4.0){
+        return vec3(0.0,0.0,1.0);
+    }
 }
 
 vec2 min2(vec2 a, vec2 b){
@@ -74,20 +77,25 @@ vec2 sdfPlane(vec3 p){
 }
 
 vec2 sdfSphere(vec3 p){
-    return vec2(length(p-vec3(0.0,-4.0,8.0)) - 1.0,1.0);
+    return vec2(length(p-vec3(0.0,-1.0,3.0)) - 1.0,1.0);
 }
+
+float gyroid(vec3 p) { return dot(cos(p), sin(p.zxy)) + 1.; }
 
 vec2 map(vec3 p){
     vec2 d = sdfSphere(p);
     d = min2(d,sdfPlane(p));
+    d = min2(d,vec2(gyroid(p),4.0));
     return d;
 }
 
 vec3 normal(vec3 p){
     vec2 e = vec2(0.01,0.0);
+    //vec2 e = vec2(0.5773,-0.5773)*0.001;
+    //return normalize(e.xyy*map(p+e.xyy).x + e.yyx*map(p+e.yyx).x + e.yxy*map(p+e.yxy).x + e.xxx*map(p+e.xxx).x);
     return vec3(map(p+e.xyy).x-map(p-e.xyy).x,
            map(p+e.yxy).x-map(p-e.yxy).x,
-           map(p+e.yyx).x-map(p-e.yyx).x
+          map(p+e.yyx).x-map(p-e.yyx).x
            );
 }
 
@@ -135,6 +143,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     rd = normalize(vec3(uv,1.0));
     rayMarching();
     vec3 col = colour;
+    col = pow(col,vec3(0.4545));
     // Output to screen
     fragColor = vec4(col,1.0);
 }
