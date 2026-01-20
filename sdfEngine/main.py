@@ -82,8 +82,9 @@ vec2 oc(vec3 p,vec3 center){
 
 vec2 sdfBeam(vec3 p,float d,vec2 mindist){
         vec3 p2 = camera_pos + rd*d;
+        //vec3 p2 = p - camera_pos;
         //float res = (length(p-ro) + length(p-p2))/(2*d)-0.8;
-        float res = length(p-vec3(p2.x,p2.y,min(p.z,d))) - 2.0;
+        float res = length(p-vec3(p2.x,p2.y,min(abs(p.z),d))) - 1.0;
         //return max2(mindist,vec2(-res,mindist.y));
         return min2(mindist,vec2(res,8.0));
 }
@@ -188,6 +189,12 @@ mat3 rotate_y(float angle){
             );
 }
 
+vec3 changeWorld(vec3 p){
+        p = p*rotate_x(angles.x);
+        p = p*rotate_y(angles.y);
+        return p; 
+}
+
 void main(){
         vec2 uv = gl_FragCoord.xy / u_resolution;
         uv = uv*2.0 - 1.0;
@@ -195,10 +202,10 @@ void main(){
         vec3 center = vec3(0.0,0.0,5.0);
         vec3 normal = normalize(vec3(uv,-1.0));
         rd = vec3(uv,1.0);
-        rd = rd*rotate_x(angles.x);
-        rd = rd*rotate_y(angles.y);
-        ro = ro*rotate_x(angles.x);
-        ro = ro*rotate_y(angles.y);
+        //rd = rd*rotate_x(angles.x);
+        //rd = rd*rotate_y(angles.y);
+        //ro = ro*rotate_x(angles.x);
+        //ro = ro*rotate_y(angles.y);
         vec2 object;
         object.x = 0.0;
         object.y = 0;
@@ -207,6 +214,7 @@ void main(){
         vec2 hit;
         for(int i=0;i<64;i++){
             vec3 p = ro + rd*object.x;
+            p = changeWorld(p);
             hit = map(p);
             object.x += hit.x;
             object.y = hit.y;
