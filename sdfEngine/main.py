@@ -84,7 +84,7 @@ vec2 sdfBeam(vec3 p,float d,vec2 mindist){
         vec3 p2 = camera_pos + rd*d;
         //vec3 p2 = p - camera_pos;
         //float res = (length(p-ro) + length(p-p2))/(2*d)-0.8;
-        float res = length(p-vec3(p2.x,p2.y,min(abs(p.z),d))) - 1.0;
+        float res = length(p-vec3(p2.x,p2.y,min(abs(p.z),d))) - 2.0;
         //return max2(mindist,vec2(-res,mindist.y));
         return min2(mindist,vec2(res,8.0));
 }
@@ -360,7 +360,7 @@ while running:
     else:
         toggle = True 
     setProgramVariables()
-    ctx.clear(0.0,0.0,0.0)
+    ctx.clear(0.1,0.1,0.1)
     vao.render()
     pygame.display.flip()
 
