@@ -117,8 +117,8 @@ vec2 fBox(vec3 p,vec3 b,vec3 center){
 
 vec2 map(vec3 p){
         vec2 d1 = sdSphere(p,r,cc,vec3(0.0,0.0,0.0));
-        vec2 d2 = fBox(p,vec3(1.0,2.0,0.5),vec3(0.0));
-        vec2 d3 = sdfPlane(p,0.0);
+        vec2 d2 = fBox(p,vec3(1.0,2.0,0.5),vec3(0.0,0.0,10.0));
+        vec2 d3 = sdfPlane(p,10.0);
         vec2 arr[100];
         int n = 3;
         //vec2 d = max(-d1,d2);
@@ -130,7 +130,7 @@ vec2 map(vec3 p){
         //}
         vec2 d = returnMin(arr,n);
         d = sdfBeam(p,30.0,d);
-        return d;
+        return d1;
 }
 
 vec3 getMaterial(vec2 object){
@@ -202,17 +202,13 @@ void main(){
         vec3 center = vec3(0.0,0.0,5.0);
         vec3 normal = normalize(vec3(uv,-1.0));
         rd = vec3(uv,1.0);
-        //rd = rd*rotate_x(angles.x);
-        //rd = rd*rotate_y(angles.y);
-        //ro = ro*rotate_x(angles.x);
-        //ro = ro*rotate_y(angles.y);
         vec2 object;
         object.x = 0.0;
         object.y = 0;
         vec3 p = ro;
         float d = 0.0;
         vec2 hit;
-        for(int i=0;i<64;i++){
+        for(int i=0;i<256;i++){
             vec3 p = ro + rd*object.x;
             p = changeWorld(p);
             hit = map(p);
@@ -221,14 +217,14 @@ void main(){
             if(hit.x<0.001){
                 break;
             }
-            if(object.x>100.0){
+            if(object.x>512.0){
                 break;
             }
         }
         vec3 col
         //;
         =vec3(0.1,0.1,0.1);
-        if(object.x < 100.0){
+        if(object.x < 512.0){
             p = ro+rd*object.x;
             colour = getMaterial(object);
             vec3 l = normalize(light_source - p);
@@ -245,7 +241,7 @@ void main(){
             col += vec3(1.0)*spec;
         }
         else{
-            col = vec3(0.8);
+            col = vec3(0.42,0.62,1.0);
         }
         if(abs(uv.x)<0.005){
             col = vec3(0.0,0.0,1.0);
@@ -271,12 +267,12 @@ def setProgramVariables():
 
 
 r = 1.0
-cc = [1.0,0.0,0.0]
+cc = [1.0,0.0,10.0]
 program['r'] = r
 program['cc'] = cc
-camera_pos = [0.0,0.0,-10.0]
+camera_pos = [0.0,0.0,0.0]
 #program['camera_pos'].value = camera_pos
-light_source = [0.0,50.0,-10.0];
+light_source = [0.0,50.0,10.0];
 #program['light_source'].value = light_source
 u_resolution = (WIDTH,HEIGHT)
 angles = [0.0,0.0,0.0]
